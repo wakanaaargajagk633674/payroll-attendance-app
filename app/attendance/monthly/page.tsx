@@ -313,11 +313,24 @@ async function MonthlyAttendanceContent({
       ) : null}
 
       {selectedEmployee ? (
-        <MonthlyAttendanceForm
-          yearMonth={yearMonth}
-          employee={toMonthlyAttendanceEmployee(selectedEmployee)}
-          rows={buildMonthRows(yearMonth, records)}
-        />
+        <>
+          <div className="flex justify-end">
+            <Button asChild variant="outline">
+              <Link
+                href={`/attendance/print?yearMonth=${encodeURIComponent(
+                  yearMonth,
+                )}&employeeId=${encodeURIComponent(selectedEmployee.id)}`}
+              >
+                {"\u3053\u306e\u5f93\u696d\u54e1\u306e\u52e4\u6020\u3092\u5370\u5237"}
+              </Link>
+            </Button>
+          </div>
+          <MonthlyAttendanceForm
+            yearMonth={yearMonth}
+            employee={toMonthlyAttendanceEmployee(selectedEmployee)}
+            rows={buildMonthRows(yearMonth, records)}
+          />
+        </>
       ) : null}
     </>
   );

@@ -53,6 +53,18 @@ type PayrollRecord = {
   employees?: EmployeeRecord | EmployeeRecord[] | null;
 };
 
+const TEXT = {
+  back: "\u7d66\u4e0e\u6708\u4e00\u89a7\u3078\u623b\u308b",
+  title: "\u7d66\u4e0e\u78ba\u8a8d\u30fb\u4fee\u6b63",
+  description:
+    "\u4ea4\u901a\u8cbb\u30fb\u63a7\u9664\u3092\u4fee\u6b63\u3057\u3001\u63a7\u9664\u8a08\u3068\u5dee\u5f15\u652f\u7d66\u984d\u3092\u518d\u8a08\u7b97\u3057\u3066\u4fdd\u5b58\u3067\u304d\u307e\u3059\u3002",
+  adminExports:
+    "Excel\u51fa\u529b\u306f\u7ba1\u7406\u8005\u5c02\u7528\u753b\u9762\u3067\u884c\u3044\u307e\u3059\u3002",
+  openAdminExports: "/admin/exports \u3092\u958b\u304f",
+  saved: "\u7d66\u4e0e\u30c7\u30fc\u30bf\u3092\u66f4\u65b0\u3057\u307e\u3057\u305f\u3002",
+  loading: "\u8aad\u307f\u8fbc\u307f\u4e2d...",
+};
+
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -141,7 +153,7 @@ async function ActionMessage({ searchParams }: { searchParams: SearchParams }) {
   if (saved) {
     return (
       <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-        給与データを更新しました。
+        {TEXT.saved}
       </div>
     );
   }
@@ -190,20 +202,18 @@ async function PayrollYearMonthContent({
             href="/payroll"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
           >
-            給与月一覧へ戻る
+            {TEXT.back}
           </Link>
           <h1 className="text-2xl font-semibold tracking-normal">
-            給与確認・修正 {yearMonth}
+            {TEXT.title} {yearMonth}
           </h1>
-          <p className="text-sm text-muted-foreground">
-            交通費・控除を修正し、控除計と差引支給額を再計算して保存できます。
-          </p>
+          <p className="text-sm text-muted-foreground">{TEXT.description}</p>
         </div>
         <div className="flex max-w-md flex-col gap-2 rounded-md border bg-background p-4 text-sm text-muted-foreground shadow-sm">
-          <p>Excel出力は管理者専用画面で行います。</p>
+          <p>{TEXT.adminExports}</p>
           <Button asChild variant="outline">
             <Link href={`/admin/exports?yearMonth=${encodeURIComponent(yearMonth)}`}>
-              /admin/exports を開く
+              {TEXT.openAdminExports}
             </Link>
           </Button>
         </div>
@@ -231,7 +241,7 @@ export default function PayrollYearMonthPage({
         <Suspense
           fallback={
             <section className="rounded-md border bg-background p-5 text-sm text-muted-foreground shadow-sm">
-              読み込み中...
+              {TEXT.loading}
             </section>
           }
         >
