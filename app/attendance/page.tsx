@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -445,6 +446,7 @@ export default function AttendancePage({
     <main className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-col gap-2">
+          <BackToHomeLink />
           <h1 className="text-2xl font-semibold tracking-normal">勤怠入力</h1>
           <p className="text-sm text-muted-foreground">
             出勤・退勤・休憩から通常時間と深夜時間を自動計算します。

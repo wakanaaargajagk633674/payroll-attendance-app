@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -586,6 +587,7 @@ export default function PayrollGeneratePage({
     <main className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-col gap-2">
+          <BackToHomeLink />
           <Link
             href="/payroll"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"

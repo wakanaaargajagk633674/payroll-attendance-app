@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -198,6 +199,7 @@ async function PayrollYearMonthContent({
     <>
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-2">
+          <BackToHomeLink />
           <Link
             href="/payroll"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"

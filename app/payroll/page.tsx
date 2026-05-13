@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/server";
 
@@ -176,6 +177,7 @@ export default function PayrollPage() {
     <main className="min-h-screen bg-muted/30 px-4 py-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
         <div className="flex flex-col gap-2">
+          <BackToHomeLink />
           <h1 className="text-2xl font-semibold tracking-normal">給与確認</h1>
           <p className="text-sm text-muted-foreground">
             Excel確定データとして登録した給与月の集計を確認します。

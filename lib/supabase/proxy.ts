@@ -20,7 +20,7 @@ export async function updateSession(request: NextRequest) {
 
   if (pathname === "/protected") {
     const url = request.nextUrl.clone();
-    url.pathname = "/attendance/monthly";
+    url.pathname = "/";
     url.search = "";
 
     return NextResponse.redirect(url);

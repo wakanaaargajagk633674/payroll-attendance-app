@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -677,6 +678,7 @@ export default function AttendancePrintPage({
       <PrintStyles />
       <div className="mx-auto flex max-w-6xl flex-col gap-6">
         <div className="no-print flex flex-col gap-2">
+          <BackToHomeLink />
           <Link
             href="/attendance/monthly"
             className="text-sm text-muted-foreground underline-offset-4 hover:underline"
