@@ -98,6 +98,14 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
 > Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
 
+## Supabase 初期スキーマ（このリポジトリ）
+
+データベースの作成手順と SQL の実行順は [docs/setup.md](docs/setup.md) を参照する。概要だけ書くと次の順番である。
+
+1. SQL Editor で `supabase/schema.sql` を実行する（テーブル・RLS・開発用 `authenticated` ポリシー）。
+2. 必要に応じて `supabase/admin-user-template.sql` を SQL Editor に貼り、**`YOUR_AUTH_USER_UID`** と **`YOUR_ADMIN_NAME`** を置換してから実行し、`app_users` に管理者を登録する。末尾の `select * from public.app_users;` で確認する。
+3. ブラウザでログイン後、`/supabase-test` で `employees` の `select` が通るか確認する（行が無ければ空配列になる）。
+
 ## Feedback and issues
 
 Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).

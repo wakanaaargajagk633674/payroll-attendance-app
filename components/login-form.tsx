@@ -1,7 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import {
+  createClient,
+  getSupabaseBrowserConfigError,
+} from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,6 +19,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+function getLoginErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    if (error.message === "Failed to fetch") {
+      return "Supabaseに接続できませんでした。Supabase URL、Publishable Key、ネットワーク設定を確認してください。詳細: Failed to fetch";
+    }
+
+    return error.message;
+  }
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  return "ログインに失敗しました。";
+}
+
 export function LoginForm({
   className,
   ...props
@@ -25,14 +44,19 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const configError = getSupabaseBrowserConfigError();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
+      if (configError) {
+        throw new Error(configError);
+      }
+
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -41,7 +65,7 @@ export function LoginForm({
       // Update this route to redirect to an authenticated route. The user already has an active session.
       router.push("/protected");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(getLoginErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -59,6 +83,11 @@ export function LoginForm({
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-6">
+              {configError && (
+                <p className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {configError}
+                </p>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -89,7 +118,11 @@ export function LoginForm({
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || Boolean(configError)}
+              >
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
