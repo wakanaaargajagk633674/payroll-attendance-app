@@ -115,10 +115,25 @@ function normalizeAttendance(
   };
 }
 
+type ExistingDeductions = {
+  employee_id: string;
+  income_tax: number | string | null;
+  meal_deduction: number | string | null;
+  rent_deduction: number | string | null;
+  other_deduction: number | string | null;
+};
+
+const EMPTY_DEDUCTIONS = {
+  incomeTax: 0,
+  mealDeduction: 0,
+  rentDeduction: 0,
+  otherDeduction: 0,
+};
+
 async function buildPayrollPayloads(yearMonth: string) {
   const supabase = await createClient();
   const range = monthRange(yearMonth);
-  const [employeesResult, attendanceResult] = await Promise.all([
+  const [employeesResult, attendanceResult, existingResult] = await Promise.all([
     supabase
       .from("employees")
       .select(
@@ -132,6 +147,12 @@ async function buildPayrollPayloads(yearMonth: string) {
       )
       .gte("work_date", range.start)
       .lte("work_date", range.end),
+    supabase
+      .from("payroll_records")
+      .select(
+        "employee_id,income_tax,meal_deduction,rent_deduction,other_deduction",
+      )
+      .eq("year_month", yearMonth),
   ]);
 
   if (employeesResult.error) {
@@ -141,6 +162,22 @@ async function buildPayrollPayloads(yearMonth: string) {
   if (attendanceResult.error) {
     throw new Error(attendanceResult.error.message);
   }
+
+  if (existingResult.error) {
+    throw new Error(existingResult.error.message);
+  }
+
+  const existingDeductions = new Map(
+    ((existingResult.data ?? []) as ExistingDeductions[]).map((record) => [
+      record.employee_id,
+      {
+        incomeTax: toNumber(record.income_tax),
+        mealDeduction: toNumber(record.meal_deduction),
+        rentDeduction: toNumber(record.rent_deduction),
+        otherDeduction: toNumber(record.other_deduction),
+      },
+    ]),
+  );
 
   const employees = ((employeesResult.data ?? []) as EmployeeRecord[]).map(
     normalizeEmployee,
@@ -153,32 +190,44 @@ async function buildPayrollPayloads(yearMonth: string) {
   const previews = generatePayrollPreview(employees, attendanceRecords);
   const updatedAt = new Date().toISOString();
 
-  return previews.map((preview) => ({
-    employee_id: preview.employeeId,
-    year_month: yearMonth,
-    payroll_month: `${yearMonth}-01`,
-    salary_type: preview.salaryType,
-    hourly_rate: preview.hourlyRate,
-    monthly_salary:
-      preview.salaryType === "monthly" ? preview.monthlySalary : null,
-    night_rate: preview.nightRate,
-    work_days: preview.workDays,
-    break_minutes_total: preview.breakMinutesTotal,
-    regular_hours: preview.regularHours,
-    night_hours: preview.nightHours,
-    regular_pay: preview.regularPay,
-    night_pay: preview.nightPay,
-    transportation_amount: preview.transportationAmount,
-    gross_payment: preview.grossPayment,
-    income_tax: 0,
-    meal_deduction: 0,
-    rent_deduction: 0,
-    other_deduction: 0,
-    deduction_total: preview.deductionTotal,
-    net_payment: preview.netPayment,
-    source: "attendance_generate",
-    updated_at: updatedAt,
-  }));
+  return previews.map((preview) => {
+    // 所得税・食事代などは画面からの手入力。勤怠の再計算で消さずに引き継ぐ。
+    const deductions =
+      existingDeductions.get(preview.employeeId) ?? EMPTY_DEDUCTIONS;
+    const deductionTotal = Math.round(
+      deductions.incomeTax +
+        deductions.mealDeduction +
+        deductions.rentDeduction +
+        deductions.otherDeduction,
+    );
+
+    return {
+      employee_id: preview.employeeId,
+      year_month: yearMonth,
+      payroll_month: `${yearMonth}-01`,
+      salary_type: preview.salaryType,
+      hourly_rate: preview.hourlyRate,
+      monthly_salary:
+        preview.salaryType === "monthly" ? preview.monthlySalary : null,
+      night_rate: preview.nightRate,
+      work_days: preview.workDays,
+      break_minutes_total: preview.breakMinutesTotal,
+      regular_hours: preview.regularHours,
+      night_hours: preview.nightHours,
+      regular_pay: preview.regularPay,
+      night_pay: preview.nightPay,
+      transportation_amount: preview.transportationAmount,
+      gross_payment: preview.grossPayment,
+      income_tax: Math.round(deductions.incomeTax),
+      meal_deduction: Math.round(deductions.mealDeduction),
+      rent_deduction: Math.round(deductions.rentDeduction),
+      other_deduction: Math.round(deductions.otherDeduction),
+      deduction_total: deductionTotal,
+      net_payment: Math.round(preview.grossPayment - deductionTotal),
+      source: "attendance_generate",
+      updated_at: updatedAt,
+    };
+  });
 }
 
 export async function generateMonthlyPayroll(formData: FormData) {

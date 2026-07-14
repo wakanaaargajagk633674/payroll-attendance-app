@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { calculateMonthlyIncomeTax } from "@/lib/payroll/income-tax";
 
 import { updatePayrollRows } from "./actions";
 
@@ -63,6 +64,16 @@ const decimalFormatter = new Intl.NumberFormat("ja-JP", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+const MEAL_RATE_PER_DAY = 250;
+const MEAL_DEDUCTION_MAX = 5000;
+
+function calculateMealDeduction(workDays: number) {
+  return Math.min(
+    Math.round(workDays * MEAL_RATE_PER_DAY),
+    MEAL_DEDUCTION_MAX,
+  );
+}
 
 function calculateDeductionTotal(row: PayrollEditRecord) {
   return Math.round(
@@ -190,6 +201,31 @@ export function PayrollEditForm({
     );
   }
 
+  function applyIncomeTaxes() {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        recalculateRow({
+          ...record,
+          // 交通費は非課税、社会保険料の控除なし。全員 甲欄・扶養0人。
+          incomeTax: calculateMonthlyIncomeTax({
+            amountAfterSocialInsurance: record.regularPay + record.nightPay,
+          }),
+        }),
+      ),
+    );
+  }
+
+  function applyMealDeductions() {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) =>
+        recalculateRow({
+          ...record,
+          mealDeduction: calculateMealDeduction(record.workDays),
+        }),
+      ),
+    );
+  }
+
   if (records.length === 0) {
     return (
       <section className="rounded-md border bg-background p-8 text-center text-sm text-muted-foreground shadow-sm">
@@ -232,7 +268,13 @@ export function PayrollEditForm({
             {formatMoney(totals.netPayment)}
           </p>
         </div>
-        <div className="flex items-end justify-start md:justify-end">
+        <div className="flex items-end justify-start gap-2 md:justify-end">
+          <Button type="button" variant="outline" onClick={applyIncomeTaxes}>
+            所得税を自動計算
+          </Button>
+          <Button type="button" variant="outline" onClick={applyMealDeductions}>
+            食事代を自動計算
+          </Button>
           <Button type="submit">まとめて保存</Button>
         </div>
       </section>
