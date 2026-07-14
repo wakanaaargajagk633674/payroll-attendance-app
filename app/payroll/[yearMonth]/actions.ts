@@ -102,7 +102,17 @@ export async function updatePayrollRows(formData: FormData) {
         record,
       ]),
     );
+
+    // 対象行が1件も取れないのはセッション切れ（RLS下で0件が返る）が典型。
+    // ここで止めないと全行スキップのまま「保存しました」と表示してしまう。
+    if (existingRecords.size === 0) {
+      throw new Error(
+        "保存対象の給与データを取得できませんでした。ログインが切れている可能性があります。再度ログインしてから保存してください。",
+      );
+    }
+
     const updatedAt = new Date().toISOString();
+    let updatedCount = 0;
 
     for (const row of rows) {
       const id = toId(row.id);
@@ -139,6 +149,14 @@ export async function updatePayrollRows(formData: FormData) {
       if (updateError) {
         throw new Error(updateError.message);
       }
+
+      updatedCount += 1;
+    }
+
+    if (updatedCount !== rows.length) {
+      throw new Error(
+        `保存できたのは ${rows.length} 件中 ${updatedCount} 件です。画面を再読み込みして、内容を確認してください。`,
+      );
     }
   } catch (error) {
     errorMessage =
