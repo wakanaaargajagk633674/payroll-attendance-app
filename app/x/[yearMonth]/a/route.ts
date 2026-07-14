@@ -27,6 +27,7 @@ type EmployeeRecord = {
   transportation_per_day?: number | string | null;
   transportation_max?: number | string | null;
   transportation_max_days?: number | string | null;
+  nearest_station?: string | null;
 };
 
 type PayrollRecord = {
@@ -37,6 +38,7 @@ type PayrollRecord = {
   monthly_salary: number | string | null;
   night_rate: number | string | null;
   work_days: number | string | null;
+  break_minutes_total: number | string | null;
   regular_hours: number | string | null;
   night_hours: number | string | null;
   regular_pay: number | string | null;
@@ -108,8 +110,10 @@ function toAccountantPayrollRecord(
     ),
     nightRate: toNumber(fallbackValue(record.night_rate, employee?.night_rate)),
     workDays: toNumber(record.work_days),
+    breakMinutesTotal: toNumber(record.break_minutes_total),
     regularHours: toNumber(record.regular_hours),
     nightHours: toNumber(record.night_hours),
+    nearestStation: employee?.nearest_station ?? "",
     regularPay: toNumber(record.regular_pay),
     nightPay: toNumber(record.night_pay),
     transportationPerDay: toNumber(employee?.transportation_per_day),
@@ -174,7 +178,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("payroll_records")
     .select(
-      "id,year_month,salary_type,hourly_rate,monthly_salary,night_rate,work_days,regular_hours,night_hours,regular_pay,night_pay,transportation_amount,gross_payment,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,employees:employee_id(id,name,full_name,salary_type,hourly_rate,monthly_salary,night_rate,transportation_per_day,transportation_max,transportation_max_days)",
+      "id,year_month,salary_type,hourly_rate,monthly_salary,night_rate,work_days,break_minutes_total,regular_hours,night_hours,regular_pay,night_pay,transportation_amount,gross_payment,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,employees:employee_id(id,name,full_name,salary_type,hourly_rate,monthly_salary,night_rate,transportation_per_day,transportation_max,transportation_max_days,nearest_station)",
     )
     .eq("year_month", yearMonth);
 

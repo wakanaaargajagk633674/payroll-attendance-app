@@ -8,8 +8,11 @@ export type AccountantPayrollRecord = {
   monthlySalary: number;
   nightRate: number;
   workDays: number;
+  /** 月次の休憩合計（分）。Excel の「休憩」列は時間で出力する。 */
+  breakMinutesTotal: number;
   regularHours: number;
   nightHours: number;
+  nearestStation: string;
   regularPay: number;
   nightPay: number;
   transportationPerDay: number;
@@ -180,6 +183,11 @@ function basePay(record: AccountantPayrollRecord) {
   return record.regularPay;
 }
 
+/** 休憩は DB に分で入っている。Excel の休憩列は勤務時間・深夜と同じ時間表記（0.00）。 */
+function breakHours(record: AccountantPayrollRecord) {
+  return Math.round((record.breakMinutesTotal / 60) * 100) / 100;
+}
+
 function combinedPay(record: AccountantPayrollRecord) {
   return basePay(record) + record.nightPay;
 }
@@ -266,7 +274,7 @@ function setDataRows(
       undefined,
       index + 1,
       record.employeeName,
-      0,
+      breakHours(record),
       record.regularHours,
       record.hourlyRate,
       regularOrMonthlyPay,
@@ -274,8 +282,7 @@ function setDataRows(
       record.nightRate,
       record.nightPay,
       combinedPay(record),
-      // employees に最寄り駅カラムを追加したら、この空欄へ差し替える。
-      "",
+      record.nearestStation,
       record.transportationPerDay,
       record.transportationAmount,
       record.grossPayment,
