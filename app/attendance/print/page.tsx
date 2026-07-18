@@ -301,7 +301,7 @@ function PrintStyles() {
     <style>{`
       @page {
         size: A4 portrait;
-        margin: 9mm;
+        margin: 7mm;
       }
 
       @media print {
@@ -318,29 +318,69 @@ function PrintStyles() {
           background: #fff !important;
         }
 
+        /* 従業員1人が確実にA4縦1枚へ収まるよう全体を圧縮 */
         .print-page {
           max-width: none !important;
+          width: 100% !important;
           border: 0 !important;
           box-shadow: none !important;
+          border-radius: 0 !important;
           padding: 0 !important;
+          font-size: 10px !important;
+        }
+
+        /* 見出し・各セクションの余白を詰める */
+        .print-page header {
+          padding-bottom: 6px !important;
+        }
+
+        .print-page h1 {
+          font-size: 15px !important;
+        }
+
+        .print-page h2 {
+          font-size: 11px !important;
+        }
+
+        .print-page > header,
+        .print-page > section {
+          margin-top: 6px !important;
+        }
+
+        .print-page dl > div,
+        .print-page .summary-item {
+          padding: 3px 5px !important;
+        }
+
+        .print-page .summary-item .text-xs,
+        .print-page dl dt {
+          font-size: 8px !important;
         }
 
         .print-table {
-          font-size: 10px;
+          font-size: 9px;
         }
 
         .print-table th,
         .print-table td {
-          padding: 3px 5px !important;
+          padding: 1px 4px !important;
+          line-height: 1.2 !important;
         }
 
         .signature-box {
-          min-height: 42px !important;
+          min-height: 34px !important;
+          padding: 4px !important;
+        }
+
+        .print-page,
+        .print-page * {
+          box-shadow: none !important;
         }
 
         .print-break {
           break-after: page;
           page-break-after: always;
+          break-inside: avoid;
         }
 
         .print-break:last-child {
@@ -561,7 +601,7 @@ function AttendancePrintView({
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-slate-50 p-2">
+    <div className="summary-item rounded-md bg-slate-50 p-2">
       <div className="text-xs text-slate-500">{label}</div>
       <div className="mt-1 text-right font-semibold tabular-nums">{value}</div>
     </div>
