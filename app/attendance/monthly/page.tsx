@@ -313,9 +313,9 @@ async function MonthlyAttendanceContent({
         </div>
       ) : null}
 
-      {selectedEmployee ? (
-        <>
-          <div className="flex justify-end">
+      {employees.length > 0 ? (
+        <div className="flex flex-wrap justify-end gap-2">
+          {selectedEmployee ? (
             <Button asChild variant="outline">
               <Link
                 href={`/attendance/print?yearMonth=${encodeURIComponent(
@@ -325,7 +325,21 @@ async function MonthlyAttendanceContent({
                 {"\u3053\u306e\u5f93\u696d\u54e1\u306e\u52e4\u6020\u3092\u5370\u5237"}
               </Link>
             </Button>
-          </div>
+          ) : null}
+          <Button asChild>
+            <Link
+              href={`/attendance/print?yearMonth=${encodeURIComponent(
+                yearMonth,
+              )}&all=1`}
+            >
+              {"\u52e4\u52d9\u8005\u5168\u54e1\u306e\u30bf\u30a4\u30e0\u30ab\u30fc\u30c9\u3092\u4e00\u62ec\u5370\u5237"}
+            </Link>
+          </Button>
+        </div>
+      ) : null}
+
+      {selectedEmployee ? (
+        <>
           <MonthlyAttendanceForm
             yearMonth={yearMonth}
             employee={toMonthlyAttendanceEmployee(selectedEmployee)}

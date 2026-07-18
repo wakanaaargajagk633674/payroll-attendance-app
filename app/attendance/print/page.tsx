@@ -13,6 +13,7 @@ import { PrintButton } from "./print-button";
 type SearchParams = Promise<{
   yearMonth?: string | string[];
   employeeId?: string | string[];
+  all?: string | string[];
 }>;
 
 type EmployeeRecord = {
@@ -95,6 +96,12 @@ const TEXT = {
   remarks: "\u5099\u8003",
   loading: "\u8aad\u307f\u8fbc\u307f\u4e2d...",
   unconfiguredName: "\u6c0f\u540d\u672a\u8a2d\u5b9a",
+  // \u5168\u54e1\u4e00\u62ec\u5370\u5237
+  printAll: "\u5168\u54e1\u5206\u3092\u4e00\u62ec\u5370\u5237",
+  allTitle: "\u5bfe\u8c61\u6708\u306b\u52e4\u52d9\u3057\u305f\u5f93\u696d\u54e1\u5168\u54e1\u306e\u30bf\u30a4\u30e0\u30ab\u30fc\u30c9",
+  allCount: (n: number) => `${n}\u540d\u5206\u3092\u9023\u7d9a\u3067\u5370\u5237\u3057\u307e\u3059\uff08\u5f93\u696d\u54e1\u3054\u3068\u306b\u30da\u30fc\u30b8\u5206\u5272\uff09\u3002`,
+  allNoRecords:
+    "\u5bfe\u8c61\u6708\u306b\u52e4\u52d9\u8a18\u9332\u306e\u3042\u308b\u5f93\u696d\u54e1\u304c\u3044\u307e\u305b\u3093\u3002",
 };
 
 const weekdayFormatter = new Intl.DateTimeFormat("ja-JP", {
@@ -330,6 +337,16 @@ function PrintStyles() {
         .signature-box {
           min-height: 42px !important;
         }
+
+        .print-break {
+          break-after: page;
+          page-break-after: always;
+        }
+
+        .print-break:last-child {
+          break-after: auto;
+          page-break-after: auto;
+        }
       }
     `}</style>
   );
@@ -377,6 +394,17 @@ function Selector({
         </Button>
         <PrintButton />
       </form>
+      <div className="mt-4 border-t pt-4">
+        <Button asChild variant="secondary">
+          <Link
+            href={`/attendance/print?yearMonth=${encodeURIComponent(
+              yearMonth,
+            )}&all=1`}
+          >
+            {TEXT.printAll}
+          </Link>
+        </Button>
+      </div>
     </section>
   );
 }
@@ -415,7 +443,7 @@ function AttendancePrintView({
   const name = employeeName(employee);
 
   return (
-    <article className="print-page rounded-xl border bg-white p-6 shadow-sm">
+    <article className="print-break print-page rounded-xl border bg-white p-6 shadow-sm">
       <header className="border-b pb-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
@@ -592,6 +620,7 @@ async function AttendancePrintContent({
   const params = await searchParams;
   const yearMonth = normalizeYearMonth(firstParam(params.yearMonth));
   const employeeId = firstParam(params.employeeId) ?? "";
+  const printAll = Boolean(firstParam(params.all));
   const supabase = await createClient();
 
   const employeesResult = await supabase
@@ -612,11 +641,83 @@ async function AttendancePrintContent({
   const employees = ((employeesResult.data ?? []) as EmployeeRecord[]).sort(
     sortEmployees,
   );
+  const range = monthRange(yearMonth);
+
+  if (printAll) {
+    const attendanceResult = await supabase
+      .from("attendance_records")
+      .select(
+        "id,employee_id,work_date,clock_in,clock_out,break_minutes,regular_hours,night_hours,status,notes",
+      )
+      .gte("work_date", range.start)
+      .lte("work_date", range.end)
+      .order("work_date", { ascending: true });
+
+    if (attendanceResult.error) {
+      return (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {attendanceResult.error.message}
+        </div>
+      );
+    }
+
+    const recordsByEmployee = new Map<string, AttendanceRecord[]>();
+    for (const record of (attendanceResult.data ?? []) as (AttendanceRecord & {
+      employee_id: string | null;
+    })[]) {
+      if (!record.employee_id) {
+        continue;
+      }
+      const list = recordsByEmployee.get(record.employee_id) ?? [];
+      list.push(record);
+      recordsByEmployee.set(record.employee_id, list);
+    }
+
+    // 対象月に実際に勤務（出勤・退勤あり）した従業員だけを対象にする
+    const workedEmployees = employees.filter((employee) => {
+      const rows = buildPrintRows(
+        yearMonth,
+        recordsByEmployee.get(employee.id) ?? [],
+      );
+      return rows.some((row) => isWorkDay(row));
+    });
+
+    return (
+      <>
+        <Selector yearMonth={yearMonth} employeeId={employeeId} employees={employees} />
+
+        <div className="no-print rounded-md border bg-background px-4 py-3 text-sm text-muted-foreground shadow-sm">
+          {TEXT.allTitle}
+          {workedEmployees.length > 0 ? ` — ${TEXT.allCount(workedEmployees.length)}` : ""}
+        </div>
+
+        {workedEmployees.length === 0 ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            {TEXT.allNoRecords}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {workedEmployees.map((employee) => (
+              <AttendancePrintView
+                key={employee.id}
+                yearMonth={yearMonth}
+                employee={employee}
+                rows={buildPrintRows(
+                  yearMonth,
+                  recordsByEmployee.get(employee.id) ?? [],
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </>
+    );
+  }
+
   const selectedEmployee = employees.find((employee) => employee.id === employeeId);
   let rows: PrintRow[] = [];
 
   if (selectedEmployee) {
-    const range = monthRange(yearMonth);
     const attendanceResult = await supabase
       .from("attendance_records")
       .select(
