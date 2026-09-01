@@ -275,7 +275,9 @@ export function MonthlyAttendanceForm({
                 <th className="px-3 py-3 text-right font-medium">通常時間</th>
                 <th className="px-3 py-3 text-right font-medium">深夜時間</th>
                 <th className="px-3 py-3 text-right font-medium">日額給与</th>
-                <th className="px-3 py-3 text-right font-medium">操作</th>
+                <th className="sticky right-0 z-20 bg-muted px-3 py-3 text-right font-medium shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.2)]">
+                  操作
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -357,7 +359,7 @@ export function MonthlyAttendanceForm({
                     <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {dailyPay > 0 ? moneyFormatter.format(dailyPay) : "-"}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-2 text-right">
+                    <td className="sticky right-0 z-10 whitespace-nowrap bg-background px-3 py-2 text-right shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.2)]">
                       <Button
                         type="button"
                         variant="outline"
@@ -389,7 +391,7 @@ export function MonthlyAttendanceForm({
                 <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
                   {moneyFormatter.format(totals.dailyPay)}
                 </td>
-                <td className="px-3 py-3" />
+                <td className="sticky right-0 z-10 bg-muted px-3 py-3 shadow-[-6px_0_6px_-6px_rgba(0,0,0,0.2)]" />
               </tr>
             </tfoot>
           </table>
