@@ -165,6 +165,26 @@ export function MonthlyAttendanceForm({
     );
   }
 
+  function clearRow(index: number) {
+    setRows((currentRows) =>
+      currentRows.map((row, rowIndex) => {
+        if (rowIndex !== index) {
+          return row;
+        }
+
+        return {
+          ...row,
+          clockIn: "",
+          clockOut: "",
+          breakMinutes: 0,
+          status: "",
+          regularHours: 0,
+          nightHours: 0,
+        };
+      }),
+    );
+  }
+
   return (
     <form action={saveMonthlyAttendance} className="grid gap-4">
       <input type="hidden" name="employee_id" value={employee.id} />
@@ -255,6 +275,7 @@ export function MonthlyAttendanceForm({
                 <th className="px-3 py-3 text-right font-medium">通常時間</th>
                 <th className="px-3 py-3 text-right font-medium">深夜時間</th>
                 <th className="px-3 py-3 text-right font-medium">日額給与</th>
+                <th className="px-3 py-3 text-right font-medium">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -336,6 +357,17 @@ export function MonthlyAttendanceForm({
                     <td className="whitespace-nowrap px-3 py-2 text-right tabular-nums">
                       {dailyPay > 0 ? moneyFormatter.format(dailyPay) : "-"}
                     </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8"
+                        onClick={() => clearRow(index)}
+                      >
+                        クリア
+                      </Button>
+                    </td>
                   </tr>
                 );
               })}
@@ -357,6 +389,7 @@ export function MonthlyAttendanceForm({
                 <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
                   {moneyFormatter.format(totals.dailyPay)}
                 </td>
+                <td className="px-3 py-3" />
               </tr>
             </tfoot>
           </table>

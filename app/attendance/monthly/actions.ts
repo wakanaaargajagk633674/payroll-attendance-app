@@ -101,6 +101,14 @@ function shouldSaveRow(
   return Boolean(clockIn || clockOut || status);
 }
 
+function isClearedRow(row: MonthlyAttendanceRowInput) {
+  const clockIn = toStringValue(row.clockIn);
+  const clockOut = toStringValue(row.clockOut);
+  const status = toStatus(row.status, Boolean(clockIn || clockOut));
+
+  return !shouldSaveRow(clockIn, clockOut, status);
+}
+
 function buildPayload(
   employeeId: string,
   row: MonthlyAttendanceRowInput,
@@ -169,17 +177,37 @@ export async function saveMonthlyAttendance(formData: FormData) {
       .map((row) => buildPayload(employeeId, row))
       .filter((payload): payload is AttendanceUpsert => payload !== null);
 
-    if (payloads.length === 0) {
+    const clearedDates = rows
+      .filter((row) => isClearedRow(row))
+      .map((row) => toStringValue(row.workDate))
+      .filter((workDate) => /^\d{4}-\d{2}-\d{2}$/.test(workDate));
+
+    if (payloads.length === 0 && clearedDates.length === 0) {
       throw new Error("保存する勤怠行がありません。");
     }
 
     const supabase = await createClient();
-    const { error } = await supabase
-      .from("attendance_records")
-      .upsert(payloads, { onConflict: "employee_id,work_date" });
 
-    if (error) {
-      errorMessage = error.message;
+    if (clearedDates.length > 0) {
+      const { error: deleteError } = await supabase
+        .from("attendance_records")
+        .delete()
+        .eq("employee_id", employeeId)
+        .in("work_date", clearedDates);
+
+      if (deleteError) {
+        throw new Error(deleteError.message);
+      }
+    }
+
+    if (payloads.length > 0) {
+      const { error } = await supabase
+        .from("attendance_records")
+        .upsert(payloads, { onConflict: "employee_id,work_date" });
+
+      if (error) {
+        errorMessage = error.message;
+      }
     }
   } catch (error) {
     errorMessage =
