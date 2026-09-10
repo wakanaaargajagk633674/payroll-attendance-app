@@ -93,6 +93,9 @@ function buildEmployeePayload(formData: FormData): EmployeePayload {
       "transportation_max_days",
     ),
     nearest_station: readNullableText(formData, "nearest_station"),
+    social_insurance_enrolled:
+      formData.get("social_insurance_enrolled") === "on",
+    long_term_care_insured: formData.get("long_term_care_insured") === "on",
     active: formData.get("active") === "on",
   };
 }

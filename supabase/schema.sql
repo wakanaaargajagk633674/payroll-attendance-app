@@ -41,11 +41,16 @@ create table if not exists public.employees (
 
 alter table public.employees
   add column if not exists employee_no text,
-  add column if not exists nearest_station text;
+  add column if not exists nearest_station text,
+  -- 社会保険（正社員など）: 加入者のみ健康保険・厚生年金・雇用保険を控除する
+  add column if not exists social_insurance_enrolled boolean not null default false,
+  add column if not exists long_term_care_insured boolean not null default false;
 
 comment on table public.employees is '従業員マスタ（月給/時給、交通費マスタ項目）';
 comment on column public.employees.employee_no is '社員NO（給与明細や会計士提出資料用）';
 comment on column public.employees.nearest_station is '最寄り駅（会計士提出資料等で使用）';
+comment on column public.employees.social_insurance_enrolled is '社会保険加入者（正社員等）。true なら健康保険・厚生年金・雇用保険を控除';
+comment on column public.employees.long_term_care_insured is '介護保険第2号被保険者（40歳〜64歳）。true なら介護保険料も控除';
 comment on column public.employees.transportation_category is '交通費区分';
 comment on column public.employees.transportation_per_trip is '1回あたり交通費';
 comment on column public.employees.transportation_max_amount is 'MAX交通費';
@@ -152,7 +157,11 @@ alter table public.payroll_records
   add column if not exists other_deduction numeric(14, 2) not null default 0,
   add column if not exists deduction_total numeric(14, 2) not null default 0,
   add column if not exists gross_payment numeric(14, 2) not null default 0,
-  add column if not exists net_payment numeric(14, 2) not null default 0;
+  add column if not exists net_payment numeric(14, 2) not null default 0,
+  add column if not exists health_insurance numeric(14, 2) not null default 0,
+  add column if not exists long_term_care_insurance numeric(14, 2) not null default 0,
+  add column if not exists pension_insurance numeric(14, 2) not null default 0,
+  add column if not exists employment_insurance numeric(14, 2) not null default 0;
 
 alter table public.payroll_records
   alter column break_minutes_total set default 0,
@@ -187,6 +196,10 @@ comment on column public.payroll_records.regular_pay is 'Excel確定の基本給
 comment on column public.payroll_records.night_pay is 'Excel確定の深夜給';
 comment on column public.payroll_records.transportation_amount is '月次交通費（手入力）';
 comment on column public.payroll_records.gross_payment is 'Excel確定の総支給額';
+comment on column public.payroll_records.health_insurance is '健康保険料（本人負担）';
+comment on column public.payroll_records.long_term_care_insurance is '介護保険料（本人負担。40歳〜64歳のみ）';
+comment on column public.payroll_records.pension_insurance is '厚生年金保険料（本人負担）';
+comment on column public.payroll_records.employment_insurance is '雇用保険料（本人負担）';
 comment on column public.payroll_records.income_tax is '所得税（手入力）';
 comment on column public.payroll_records.meal_deduction is 'Excel確定の食事代控除';
 comment on column public.payroll_records.rent_deduction is 'Excel確定の家賃控除';

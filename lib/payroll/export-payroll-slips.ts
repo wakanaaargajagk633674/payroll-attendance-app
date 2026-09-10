@@ -15,6 +15,10 @@ export type PayrollSlipRecord = {
   nightPay: number;
   transportationAmount: number;
   grossPayment: number;
+  healthInsurance: number;
+  longTermCareInsurance: number;
+  pensionInsurance: number;
+  employmentInsurance: number;
   incomeTax: number;
   mealDeduction: number;
   rentDeduction: number;
@@ -101,6 +105,16 @@ function basePayAmount(record: PayrollSlipRecord) {
   }
 
   return record.regularPay;
+}
+
+/** 社会保険料合計（本人負担） */
+function slipSocialInsuranceTotal(record: PayrollSlipRecord) {
+  return (
+    record.healthInsurance +
+    record.longTermCareInsurance +
+    record.pensionInsurance +
+    record.employmentInsurance
+  );
 }
 
 function setMergedValue(
@@ -406,11 +420,46 @@ function buildSlipSheet(
   worksheet.getCell("I15").font = { name: BASE_FONT, bold: true, size: 11 };
 
   setSectionHeader(worksheet, 17, "控除");
-  setPair(worksheet, "A18:B18", "A19:B19", "健康保険（介護）", 0, "#,##0");
-  setPair(worksheet, "C18:D18", "C19:D19", "健康保険（健保）", 0, "#,##0");
-  setPair(worksheet, "E18:F18", "E19:F19", "厚生年金", 0, "#,##0");
-  setPair(worksheet, "G18:H18", "G19:H19", "雇用保険", 0, "#,##0");
-  setPair(worksheet, "I18:J18", "I19:J19", "社会保険料", 0, "#,##0");
+  setPair(
+    worksheet,
+    "A18:B18",
+    "A19:B19",
+    "健康保険（介護）",
+    record.longTermCareInsurance,
+    "#,##0",
+  );
+  setPair(
+    worksheet,
+    "C18:D18",
+    "C19:D19",
+    "健康保険（健保）",
+    record.healthInsurance,
+    "#,##0",
+  );
+  setPair(
+    worksheet,
+    "E18:F18",
+    "E19:F19",
+    "厚生年金",
+    record.pensionInsurance,
+    "#,##0",
+  );
+  setPair(
+    worksheet,
+    "G18:H18",
+    "G19:H19",
+    "雇用保険",
+    record.employmentInsurance,
+    "#,##0",
+  );
+  setPair(
+    worksheet,
+    "I18:J18",
+    "I19:J19",
+    "社会保険料",
+    slipSocialInsuranceTotal(record),
+    "#,##0",
+  );
   setPair(worksheet, "A20:B20", "A21:B21", "所得税", record.incomeTax, "#,##0");
   setPair(worksheet, "C20:D20", "C21:D21", "住民税", 0, "#,##0");
   setPair(worksheet, "E20:F20", "E21:F21", "積立金", 0, "#,##0");

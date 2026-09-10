@@ -45,6 +45,10 @@ type PayrollRecord = {
   night_pay: number | string | null;
   transportation_amount: number | string | null;
   gross_payment: number | string | null;
+  health_insurance: number | string | null;
+  long_term_care_insurance: number | string | null;
+  pension_insurance: number | string | null;
+  employment_insurance: number | string | null;
   income_tax: number | string | null;
   meal_deduction: number | string | null;
   rent_deduction: number | string | null;
@@ -119,6 +123,10 @@ function toAccountantPayrollRecord(
     transportationPerDay: toNumber(employee?.transportation_per_day),
     transportationAmount: toNumber(record.transportation_amount),
     grossPayment: toNumber(record.gross_payment),
+    healthInsurance: toNumber(record.health_insurance),
+    longTermCareInsurance: toNumber(record.long_term_care_insurance),
+    pensionInsurance: toNumber(record.pension_insurance),
+    employmentInsurance: toNumber(record.employment_insurance),
     incomeTax: toNumber(record.income_tax),
     mealDeduction: toNumber(record.meal_deduction),
     rentDeduction: toNumber(record.rent_deduction),
@@ -178,7 +186,7 @@ export async function GET(
   const { data, error } = await supabase
     .from("payroll_records")
     .select(
-      "id,year_month,salary_type,hourly_rate,monthly_salary,night_rate,work_days,break_minutes_total,regular_hours,night_hours,regular_pay,night_pay,transportation_amount,gross_payment,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,employees:employee_id(id,name,full_name,salary_type,hourly_rate,monthly_salary,night_rate,transportation_per_day,transportation_max,transportation_max_days,nearest_station)",
+      "id,year_month,salary_type,hourly_rate,monthly_salary,night_rate,work_days,break_minutes_total,regular_hours,night_hours,regular_pay,night_pay,transportation_amount,gross_payment,health_insurance,long_term_care_insurance,pension_insurance,employment_insurance,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,employees:employee_id(id,name,full_name,salary_type,hourly_rate,monthly_salary,night_rate,transportation_per_day,transportation_max,transportation_max_days,nearest_station)",
     )
     .eq("year_month", yearMonth);
 

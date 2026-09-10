@@ -8,6 +8,10 @@ import { createClient } from "@/lib/supabase/server";
 type PayrollEditRowInput = {
   id?: unknown;
   transportationAmount?: unknown;
+  healthInsurance?: unknown;
+  longTermCareInsurance?: unknown;
+  pensionInsurance?: unknown;
+  employmentInsurance?: unknown;
   incomeTax?: unknown;
   mealDeduction?: unknown;
   rentDeduction?: unknown;
@@ -62,9 +66,19 @@ function toId(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function socialInsuranceTotal(row: PayrollEditRowInput) {
+  return Math.round(
+    toNumber(row.healthInsurance) +
+      toNumber(row.longTermCareInsurance) +
+      toNumber(row.pensionInsurance) +
+      toNumber(row.employmentInsurance),
+  );
+}
+
 function calculateDeductionTotal(row: PayrollEditRowInput) {
   return Math.round(
-    toNumber(row.incomeTax) +
+    socialInsuranceTotal(row) +
+      toNumber(row.incomeTax) +
       toNumber(row.mealDeduction) +
       toNumber(row.rentDeduction) +
       toNumber(row.otherDeduction),
@@ -135,6 +149,12 @@ export async function updatePayrollRows(formData: FormData) {
         .update({
           transportation_amount: transportationAmount,
           gross_payment: grossPayment,
+          health_insurance: Math.round(toNumber(row.healthInsurance)),
+          long_term_care_insurance: Math.round(
+            toNumber(row.longTermCareInsurance),
+          ),
+          pension_insurance: Math.round(toNumber(row.pensionInsurance)),
+          employment_insurance: Math.round(toNumber(row.employmentInsurance)),
           income_tax: Math.round(toNumber(row.incomeTax)),
           meal_deduction: Math.round(toNumber(row.mealDeduction)),
           rent_deduction: Math.round(toNumber(row.rentDeduction)),

@@ -18,6 +18,10 @@ export type AccountantPayrollRecord = {
   transportationPerDay: number;
   transportationAmount: number;
   grossPayment: number;
+  healthInsurance: number;
+  longTermCareInsurance: number;
+  pensionInsurance: number;
+  employmentInsurance: number;
   incomeTax: number;
   mealDeduction: number;
   rentDeduction: number;
@@ -188,6 +192,16 @@ function breakHours(record: AccountantPayrollRecord) {
   return Math.round((record.breakMinutesTotal / 60) * 100) / 100;
 }
 
+/** 社会保険料合計（本人負担）。Excel の「社会保険料合計」「差引額」列に使う。 */
+function socialInsuranceTotal(record: AccountantPayrollRecord) {
+  return (
+    record.healthInsurance +
+    record.longTermCareInsurance +
+    record.pensionInsurance +
+    record.employmentInsurance
+  );
+}
+
 function combinedPay(record: AccountantPayrollRecord) {
   return basePay(record) + record.nightPay;
 }
@@ -286,12 +300,12 @@ function setDataRows(
       record.transportationPerDay,
       record.transportationAmount,
       record.grossPayment,
-      0,
-      0,
-      0,
-      0,
-      0,
-      record.grossPayment,
+      record.healthInsurance,
+      record.longTermCareInsurance,
+      record.pensionInsurance,
+      record.employmentInsurance,
+      socialInsuranceTotal(record),
+      record.grossPayment - socialInsuranceTotal(record),
       record.incomeTax,
       record.mealDeduction,
       0,

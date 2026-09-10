@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { calculateMonthlyIncomeTax } from "@/lib/payroll/income-tax";
+import { calculateSocialInsurance } from "@/lib/payroll/social-insurance";
 
 import { updatePayrollRows } from "./actions";
 
@@ -27,6 +28,12 @@ export type PayrollEditRecord = {
   nightPay: number;
   transportationAmount: number;
   grossPayment: number;
+  socialInsuranceEnrolled: boolean;
+  longTermCareInsured: boolean;
+  healthInsurance: number;
+  longTermCareInsurance: number;
+  pensionInsurance: number;
+  employmentInsurance: number;
   incomeTax: number;
   mealDeduction: number;
   rentDeduction: number;
@@ -50,6 +57,10 @@ type PayrollEditTotals = {
   nightPay: number;
   transportationAmount: number;
   grossPayment: number;
+  healthInsurance: number;
+  longTermCareInsurance: number;
+  pensionInsurance: number;
+  employmentInsurance: number;
   incomeTax: number;
   mealDeduction: number;
   rentDeduction: number;
@@ -75,9 +86,22 @@ function calculateMealDeduction(workDays: number) {
   );
 }
 
+function socialInsuranceTotal(row: PayrollEditRecord) {
+  return Math.round(
+    row.healthInsurance +
+      row.longTermCareInsurance +
+      row.pensionInsurance +
+      row.employmentInsurance,
+  );
+}
+
 function calculateDeductionTotal(row: PayrollEditRecord) {
   return Math.round(
-    row.incomeTax + row.mealDeduction + row.rentDeduction + row.otherDeduction,
+    socialInsuranceTotal(row) +
+      row.incomeTax +
+      row.mealDeduction +
+      row.rentDeduction +
+      row.otherDeduction,
   );
 }
 
@@ -124,6 +148,10 @@ function editableRowsPayload(records: PayrollEditRecord[]) {
   return records.map((record) => ({
     id: record.id,
     transportationAmount: record.transportationAmount,
+    healthInsurance: record.healthInsurance,
+    longTermCareInsurance: record.longTermCareInsurance,
+    pensionInsurance: record.pensionInsurance,
+    employmentInsurance: record.employmentInsurance,
     incomeTax: record.incomeTax,
     mealDeduction: record.mealDeduction,
     rentDeduction: record.rentDeduction,
@@ -144,6 +172,12 @@ function calculateTotals(records: PayrollEditRecord[]) {
       transportationAmount:
         totals.transportationAmount + record.transportationAmount,
       grossPayment: totals.grossPayment + record.grossPayment,
+      healthInsurance: totals.healthInsurance + record.healthInsurance,
+      longTermCareInsurance:
+        totals.longTermCareInsurance + record.longTermCareInsurance,
+      pensionInsurance: totals.pensionInsurance + record.pensionInsurance,
+      employmentInsurance:
+        totals.employmentInsurance + record.employmentInsurance,
       incomeTax: totals.incomeTax + record.incomeTax,
       mealDeduction: totals.mealDeduction + record.mealDeduction,
       rentDeduction: totals.rentDeduction + record.rentDeduction,
@@ -160,6 +194,10 @@ function calculateTotals(records: PayrollEditRecord[]) {
       nightPay: 0,
       transportationAmount: 0,
       grossPayment: 0,
+      healthInsurance: 0,
+      longTermCareInsurance: 0,
+      pensionInsurance: 0,
+      employmentInsurance: 0,
       incomeTax: 0,
       mealDeduction: 0,
       rentDeduction: 0,
@@ -181,6 +219,10 @@ export function PayrollEditForm({
     id: string,
     key:
       | "transportationAmount"
+      | "healthInsurance"
+      | "longTermCareInsurance"
+      | "pensionInsurance"
+      | "employmentInsurance"
       | "incomeTax"
       | "mealDeduction"
       | "rentDeduction"
@@ -201,14 +243,48 @@ export function PayrollEditForm({
     );
   }
 
+  function applySocialInsurance() {
+    setRecords((currentRecords) =>
+      currentRecords.map((record) => {
+        // 社会保険未加入（アルバイト等）は 0 のまま。
+        if (!record.socialInsuranceEnrolled) {
+          return recalculateRow({
+            ...record,
+            healthInsurance: 0,
+            longTermCareInsurance: 0,
+            pensionInsurance: 0,
+            employmentInsurance: 0,
+          });
+        }
+
+        // 標準報酬月額はその月の総支給額（通勤手当を含む）を等級表に当てはめて求める。
+        const insurance = calculateSocialInsurance({
+          grossPayment: record.grossPayment,
+          longTermCareInsured: record.longTermCareInsured,
+        });
+
+        return recalculateRow({
+          ...record,
+          healthInsurance: insurance.healthInsurance,
+          longTermCareInsurance: insurance.longTermCareInsurance,
+          pensionInsurance: insurance.pensionInsurance,
+          employmentInsurance: insurance.employmentInsurance,
+        });
+      }),
+    );
+  }
+
   function applyIncomeTaxes() {
     setRecords((currentRecords) =>
       currentRecords.map((record) =>
         recalculateRow({
           ...record,
-          // 交通費は非課税、社会保険料の控除なし。全員 甲欄・扶養0人。
+          // 交通費は非課税なので課税対象から外す。全員 甲欄・扶養0人。
           incomeTax: calculateMonthlyIncomeTax({
-            amountAfterSocialInsurance: record.regularPay + record.nightPay,
+            amountAfterSocialInsurance:
+              record.regularPay +
+              record.nightPay -
+              socialInsuranceTotal(record),
           }),
         }),
       ),
@@ -269,6 +345,13 @@ export function PayrollEditForm({
           </p>
         </div>
         <div className="flex items-end justify-start gap-2 md:justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={applySocialInsurance}
+          >
+            社会保険料を自動計算
+          </Button>
           <Button type="button" variant="outline" onClick={applyIncomeTaxes}>
             所得税を自動計算
           </Button>
@@ -283,12 +366,12 @@ export function PayrollEditForm({
         <div className="flex flex-col gap-1 border-b px-5 py-4">
           <h2 className="text-lg font-semibold">給与確認・修正</h2>
           <p className="text-sm text-muted-foreground">
-            交通費と控除欄を編集できます。控除計と差引支給額は自動再計算されます。
+            交通費と控除欄を編集できます。控除計と差引支給額は自動再計算されます。社会保険料は「社会保険料を自動計算」→「所得税を自動計算」の順に実行してください（所得税は社会保険料控除後の金額で計算します）。
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[2450px] text-sm">
+          <table className="w-full min-w-[2950px] text-sm">
             <thead className="bg-muted/60 text-left text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-3 py-3 font-medium">社員NO</th>
@@ -307,6 +390,10 @@ export function PayrollEditForm({
                 <th className="px-3 py-3 text-right font-medium">深夜給与</th>
                 <th className="px-3 py-3 text-right font-medium">交通費</th>
                 <th className="px-3 py-3 text-right font-medium">総支給額</th>
+                <th className="px-3 py-3 text-right font-medium">健康保険</th>
+                <th className="px-3 py-3 text-right font-medium">介護保険</th>
+                <th className="px-3 py-3 text-right font-medium">厚生年金</th>
+                <th className="px-3 py-3 text-right font-medium">雇用保険</th>
                 <th className="px-3 py-3 text-right font-medium">所得税</th>
                 <th className="px-3 py-3 text-right font-medium">食事代</th>
                 <th className="px-3 py-3 text-right font-medium">家賃</th>
@@ -386,6 +473,28 @@ export function PayrollEditForm({
                   <td className="whitespace-nowrap px-3 py-2 text-right font-semibold tabular-nums">
                     {formatMoney(record.grossPayment)}
                   </td>
+                  {(
+                    [
+                      "healthInsurance",
+                      "longTermCareInsurance",
+                      "pensionInsurance",
+                      "employmentInsurance",
+                    ] as const
+                  ).map((key) => (
+                    <td key={key} className="whitespace-nowrap px-3 py-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputMode="numeric"
+                        value={record[key]}
+                        onChange={(event) =>
+                          updateRecord(record.id, key, event.target.value)
+                        }
+                        className="h-8 w-28 text-right tabular-nums"
+                      />
+                    </td>
+                  ))}
                   <td className="whitespace-nowrap px-3 py-2">
                     <Input
                       type="number"
@@ -493,6 +602,18 @@ export function PayrollEditForm({
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
                   {formatMoney(totals.grossPayment)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                  {formatMoney(totals.healthInsurance)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                  {formatMoney(totals.longTermCareInsurance)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                  {formatMoney(totals.pensionInsurance)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
+                  {formatMoney(totals.employmentInsurance)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-3 text-right tabular-nums">
                   {formatMoney(totals.incomeTax)}

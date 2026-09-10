@@ -117,6 +117,10 @@ function normalizeAttendance(
 
 type ExistingDeductions = {
   employee_id: string;
+  health_insurance: number | string | null;
+  long_term_care_insurance: number | string | null;
+  pension_insurance: number | string | null;
+  employment_insurance: number | string | null;
   income_tax: number | string | null;
   meal_deduction: number | string | null;
   rent_deduction: number | string | null;
@@ -124,6 +128,10 @@ type ExistingDeductions = {
 };
 
 const EMPTY_DEDUCTIONS = {
+  healthInsurance: 0,
+  longTermCareInsurance: 0,
+  pensionInsurance: 0,
+  employmentInsurance: 0,
   incomeTax: 0,
   mealDeduction: 0,
   rentDeduction: 0,
@@ -150,7 +158,7 @@ async function buildPayrollPayloads(yearMonth: string) {
     supabase
       .from("payroll_records")
       .select(
-        "employee_id,income_tax,meal_deduction,rent_deduction,other_deduction",
+        "employee_id,health_insurance,long_term_care_insurance,pension_insurance,employment_insurance,income_tax,meal_deduction,rent_deduction,other_deduction",
       )
       .eq("year_month", yearMonth),
   ]);
@@ -171,6 +179,10 @@ async function buildPayrollPayloads(yearMonth: string) {
     ((existingResult.data ?? []) as ExistingDeductions[]).map((record) => [
       record.employee_id,
       {
+        healthInsurance: toNumber(record.health_insurance),
+        longTermCareInsurance: toNumber(record.long_term_care_insurance),
+        pensionInsurance: toNumber(record.pension_insurance),
+        employmentInsurance: toNumber(record.employment_insurance),
         incomeTax: toNumber(record.income_tax),
         mealDeduction: toNumber(record.meal_deduction),
         rentDeduction: toNumber(record.rent_deduction),
@@ -195,7 +207,11 @@ async function buildPayrollPayloads(yearMonth: string) {
     const deductions =
       existingDeductions.get(preview.employeeId) ?? EMPTY_DEDUCTIONS;
     const deductionTotal = Math.round(
-      deductions.incomeTax +
+      deductions.healthInsurance +
+        deductions.longTermCareInsurance +
+        deductions.pensionInsurance +
+        deductions.employmentInsurance +
+        deductions.incomeTax +
         deductions.mealDeduction +
         deductions.rentDeduction +
         deductions.otherDeduction,
@@ -218,6 +234,10 @@ async function buildPayrollPayloads(yearMonth: string) {
       night_pay: preview.nightPay,
       transportation_amount: preview.transportationAmount,
       gross_payment: preview.grossPayment,
+      health_insurance: Math.round(deductions.healthInsurance),
+      long_term_care_insurance: Math.round(deductions.longTermCareInsurance),
+      pension_insurance: Math.round(deductions.pensionInsurance),
+      employment_insurance: Math.round(deductions.employmentInsurance),
       income_tax: Math.round(deductions.incomeTax),
       meal_deduction: Math.round(deductions.mealDeduction),
       rent_deduction: Math.round(deductions.rentDeduction),

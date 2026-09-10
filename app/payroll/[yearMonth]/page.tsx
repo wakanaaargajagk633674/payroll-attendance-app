@@ -27,6 +27,8 @@ type EmployeeRecord = {
   employee_no?: string | null;
   employee_code?: string | null;
   nearest_station?: string | null;
+  social_insurance_enrolled?: boolean | null;
+  long_term_care_insured?: boolean | null;
 };
 
 type PayrollRecord = {
@@ -44,6 +46,10 @@ type PayrollRecord = {
   night_pay: number | string | null;
   transportation_amount: number | string | null;
   gross_payment: number | string | null;
+  health_insurance: number | string | null;
+  long_term_care_insurance: number | string | null;
+  pension_insurance: number | string | null;
+  employment_insurance: number | string | null;
   income_tax: number | string | null;
   meal_deduction: number | string | null;
   rent_deduction: number | string | null;
@@ -128,6 +134,12 @@ function toPayrollEditRecord(record: PayrollRecord): PayrollEditRecord {
     nightPay: toNumber(record.night_pay),
     transportationAmount: toNumber(record.transportation_amount),
     grossPayment: toNumber(record.gross_payment),
+    socialInsuranceEnrolled: employee?.social_insurance_enrolled === true,
+    longTermCareInsured: employee?.long_term_care_insured === true,
+    healthInsurance: toNumber(record.health_insurance),
+    longTermCareInsurance: toNumber(record.long_term_care_insurance),
+    pensionInsurance: toNumber(record.pension_insurance),
+    employmentInsurance: toNumber(record.employment_insurance),
     incomeTax: toNumber(record.income_tax),
     mealDeduction: toNumber(record.meal_deduction),
     rentDeduction: toNumber(record.rent_deduction),
@@ -167,7 +179,7 @@ async function PayrollEditContent({ yearMonth }: { yearMonth: string }) {
   const { data, error } = await supabase
     .from("payroll_records")
     .select(
-      "id,year_month,salary_type,work_days,break_minutes_total,regular_hours,night_hours,hourly_rate,night_rate,monthly_salary,regular_pay,night_pay,transportation_amount,gross_payment,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,source,employees:employee_id(id,name,full_name,display_name,employee_no,employee_code,nearest_station)",
+      "id,year_month,salary_type,work_days,break_minutes_total,regular_hours,night_hours,hourly_rate,night_rate,monthly_salary,regular_pay,night_pay,transportation_amount,gross_payment,health_insurance,long_term_care_insurance,pension_insurance,employment_insurance,income_tax,meal_deduction,rent_deduction,other_deduction,deduction_total,net_payment,source,employees:employee_id(id,name,full_name,display_name,employee_no,employee_code,nearest_station,social_insurance_enrolled,long_term_care_insured)",
     )
     .eq("year_month", yearMonth);
 

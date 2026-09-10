@@ -32,6 +32,8 @@ type EmployeeRecord = Record<string, unknown> & {
   transportation_max?: number | string | null;
   transportation_max_days?: number | string | null;
   nearest_station?: string | null;
+  social_insurance_enrolled?: boolean | null;
+  long_term_care_insured?: boolean | null;
   active?: boolean | null;
 };
 
@@ -185,6 +187,26 @@ function EmployeeForm() {
           </div>
           <div className="flex items-end gap-3 pb-2">
             <input
+              id="social_insurance_enrolled"
+              name="social_insurance_enrolled"
+              type="checkbox"
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="social_insurance_enrolled">
+              社会保険加入（正社員）
+            </Label>
+          </div>
+          <div className="flex items-end gap-3 pb-2">
+            <input
+              id="long_term_care_insured"
+              name="long_term_care_insured"
+              type="checkbox"
+              className="h-4 w-4 rounded border-input"
+            />
+            <Label htmlFor="long_term_care_insured">介護保険対象（40歳〜64歳）</Label>
+          </div>
+          <div className="flex items-end gap-3 pb-2">
+            <input
               id="active"
               name="active"
               type="checkbox"
@@ -301,6 +323,8 @@ async function EmployeesTable() {
                 transportation_max_days
               </th>
               <th className="px-3 py-3 font-medium">nearest_station</th>
+              <th className="px-3 py-3 font-medium">社会保険</th>
+              <th className="px-3 py-3 font-medium">介護保険</th>
               <th className="px-3 py-3 font-medium">active</th>
               <th className="px-3 py-3 font-medium">保存</th>
             </tr>
@@ -309,7 +333,7 @@ async function EmployeesTable() {
             {employees.length === 0 ? (
               <tr>
                 <td
-                  colSpan={14}
+                  colSpan={16}
                   className="px-4 py-8 text-center text-muted-foreground"
                 >
                   従業員データはまだありません。
@@ -397,6 +421,36 @@ async function EmployeesTable() {
                       <div className="flex h-8 items-center gap-2">
                         <input
                           form={formId}
+                          id={`${formId}-social-insurance`}
+                          name="social_insurance_enrolled"
+                          type="checkbox"
+                          defaultChecked={
+                            employee.social_insurance_enrolled === true
+                          }
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <Label htmlFor={`${formId}-social-insurance`}>加入</Label>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <div className="flex h-8 items-center gap-2">
+                        <input
+                          form={formId}
+                          id={`${formId}-long-term-care`}
+                          name="long_term_care_insured"
+                          type="checkbox"
+                          defaultChecked={
+                            employee.long_term_care_insured === true
+                          }
+                          className="h-4 w-4 rounded border-input"
+                        />
+                        <Label htmlFor={`${formId}-long-term-care`}>対象</Label>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2">
+                      <div className="flex h-8 items-center gap-2">
+                        <input
+                          form={formId}
                           id={`${formId}-active`}
                           name="active"
                           type="checkbox"
@@ -427,7 +481,7 @@ async function EmployeesTable() {
       {employees.length > 0 ? (
         <div className="border-t px-5 py-3 text-xs text-muted-foreground">
           現在値: active
-          は上に表示し、inactiveは薄く表示しています。時給を変えると深夜時給が自動更新されます。
+          は上に表示し、inactiveは薄く表示しています。時給を変えると深夜時給が自動更新されます。社会保険に「加入」を付けた従業員だけ、給与画面で健康保険・厚生年金・雇用保険を自動計算します。
         </div>
       ) : null}
     </section>
