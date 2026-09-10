@@ -301,10 +301,11 @@ function PrintStyles() {
     <style>{`
       @page {
         size: A4 portrait;
-        margin: 7mm;
+        margin: 6mm;
       }
 
       @media print {
+        html,
         body {
           background: #fff !important;
         }
@@ -313,79 +314,167 @@ function PrintStyles() {
           display: none !important;
         }
 
+        /*
+         * A4縦1枚 = 297mm。上下マージン 6mm を引いた 285mm が1人分の使える高さ。
+         * 内訳の目安: ヘッダー 20mm / 集計 10mm / 参考給与 12mm / 日別表 180mm /
+         * 署名欄 17mm / 余白 8mm ＝ 約246mm。31日ある月でも余裕を持って収まる。
+         * 高さが暴れる原因になるのは (1) グリッドの縦積み (2) 表セルの折り返し の2つなので、
+         * どちらも下で明示的に潰している。
+         */
         .print-shell {
           padding: 0 !important;
+          margin: 0 !important;
           background: #fff !important;
         }
 
-        /* 従業員1人が確実にA4縦1枚へ収まるよう全体を圧縮 */
+        /* 画面用に付けている gap を印刷では消す（ページ間に余分な空白が出るため） */
+        .print-shell > div,
+        .print-shell > div > div {
+          max-width: none !important;
+          gap: 0 !important;
+        }
+
         .print-page {
           max-width: none !important;
           width: 100% !important;
-          border: 0 !important;
-          box-shadow: none !important;
-          border-radius: 0 !important;
+          margin: 0 !important;
           padding: 0 !important;
-          font-size: 10px !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          box-shadow: none !important;
+          color: #000 !important;
+          font-size: 9pt !important;
+          line-height: 1.3 !important;
         }
 
-        /* 見出し・各セクションの余白を詰める */
-        .print-page header {
-          padding-bottom: 6px !important;
-        }
-
-        .print-page h1 {
-          font-size: 15px !important;
-        }
-
-        .print-page h2 {
-          font-size: 11px !important;
-        }
-
-        .print-page > header,
-        .print-page > section {
-          margin-top: 6px !important;
-        }
-
-        .print-page dl > div,
-        .print-page .summary-item {
-          padding: 3px 5px !important;
-        }
-
-        .print-page .summary-item .text-xs,
-        .print-page dl dt {
-          font-size: 8px !important;
-        }
-
-        .print-table {
-          font-size: 9px;
-        }
-
-        .print-table th,
-        .print-table td {
-          padding: 1px 4px !important;
-          line-height: 1.2 !important;
-        }
-
-        .signature-box {
-          min-height: 34px !important;
-          padding: 4px !important;
-        }
-
-        .print-page,
         .print-page * {
           box-shadow: none !important;
         }
 
+        .print-page h1 {
+          margin: 0 !important;
+          font-size: 14pt !important;
+          line-height: 1.2 !important;
+        }
+
+        .print-page h2 {
+          margin: 0 !important;
+          font-size: 10pt !important;
+          line-height: 1.2 !important;
+        }
+
+        .print-page > header {
+          margin: 0 !important;
+          padding-bottom: 2mm !important;
+        }
+
+        .print-page > section {
+          margin-top: 2mm !important;
+        }
+
+        /*
+         * 印刷時のビューポート幅はA4幅相当まで縮むため Tailwind の md: (768px) が効かない。
+         * 各グリッドは印刷用クラスで横並びを固定する（縦積みすると縦に溢れる）。
+         */
+        .print-header-row {
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: flex-start !important;
+          justify-content: space-between !important;
+          gap: 4mm !important;
+        }
+
+        .print-header-row .print-header-meta {
+          text-align: right !important;
+          white-space: nowrap !important;
+          font-size: 7.5pt !important;
+        }
+
+        .print-meta-grid,
+        .print-summary-grid {
+          display: grid !important;
+          grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+          gap: 1.5mm !important;
+          margin-top: 2mm !important;
+        }
+
+        .print-meta-grid .print-meta-wide {
+          grid-column: span 2 / span 2 !important;
+        }
+
+        .print-pay-grid,
+        .print-sign-grid {
+          display: grid !important;
+          grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          gap: 1.5mm !important;
+        }
+
+        .print-page dl > div,
+        .print-page .summary-item {
+          padding: 1mm 1.5mm !important;
+          border-radius: 0 !important;
+        }
+
+        .print-page dl dt,
+        .print-page .summary-item .text-xs {
+          font-size: 7pt !important;
+          line-height: 1.2 !important;
+        }
+
+        .print-page dl dd,
+        .print-page .summary-item .mt-1 {
+          margin-top: 0 !important;
+          font-size: 9pt !important;
+          line-height: 1.3 !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+
+        .print-page section.print-pay-section {
+          padding: 1.5mm 2mm !important;
+        }
+
+        /*
+         * 日別表: table-layout: fixed と nowrap で1行を必ず1行に収める。
+         * 備考が長くても折り返さないので、31日でも表の高さが 5.6mm x 32 で確定する。
+         */
+        .print-table {
+          width: 100% !important;
+          table-layout: fixed !important;
+          font-size: 8.5pt !important;
+        }
+
+        .print-table th,
+        .print-table td {
+          height: 5.6mm !important;
+          padding: 0 1mm !important;
+          line-height: 1.15 !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+        }
+
+        .signature-box {
+          min-height: 15mm !important;
+          padding: 1.5mm !important;
+        }
+
+        .signature-box .text-xs {
+          font-size: 7pt !important;
+        }
+
+        /* 1人 = 1ページ。最後の1人の後ろで空白ページを作らない。 */
         .print-break {
-          break-after: page;
-          page-break-after: always;
-          break-inside: avoid;
+          break-after: page !important;
+          page-break-after: always !important;
+          break-inside: avoid !important;
+          page-break-inside: avoid !important;
         }
 
         .print-break:last-child {
-          break-after: auto;
-          page-break-after: auto;
+          break-after: auto !important;
+          page-break-after: auto !important;
         }
       }
     `}</style>
@@ -485,7 +574,7 @@ function AttendancePrintView({
   return (
     <article className="print-break print-page rounded-xl border bg-white p-6 shadow-sm">
       <header className="border-b pb-4">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="print-header-row flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-normal text-slate-950">
               {TEXT.title}
@@ -494,17 +583,17 @@ function AttendancePrintView({
               {formatYearMonth(yearMonth)}
             </p>
           </div>
-          <div className="text-sm text-slate-600 md:text-right">
+          <div className="print-header-meta text-sm text-slate-600 md:text-right">
             {TEXT.printDate}: {printDateFormatter.format(new Date())}
           </div>
         </div>
 
-        <dl className="mt-4 grid gap-2 text-sm md:grid-cols-5">
+        <dl className="print-meta-grid mt-4 grid gap-2 text-sm md:grid-cols-5">
           <div className="rounded-md bg-slate-50 p-2">
             <dt className="text-xs text-slate-500">{TEXT.displayName}</dt>
             <dd className="font-semibold">{displayName || "-"}</dd>
           </div>
-          <div className="rounded-md bg-slate-50 p-2 md:col-span-2">
+          <div className="print-meta-wide rounded-md bg-slate-50 p-2 md:col-span-2">
             <dt className="text-xs text-slate-500">{TEXT.name}</dt>
             <dd className="font-semibold">{name || "-"}</dd>
           </div>
@@ -521,7 +610,7 @@ function AttendancePrintView({
         </dl>
       </header>
 
-      <section className="mt-4 grid gap-2 text-sm md:grid-cols-5">
+      <section className="print-summary-grid mt-4 grid gap-2 text-sm md:grid-cols-5">
         <SummaryItem label={TEXT.workDays} value={`${totals.workDays}`} />
         <SummaryItem label={TEXT.breakTotal} value={formatBreak(totals.breakMinutes)} />
         <SummaryItem label={TEXT.regularHours} value={formatHours(totals.regularHours)} />
@@ -532,10 +621,10 @@ function AttendancePrintView({
         />
       </section>
 
-      <section className="mt-3 rounded-md border border-slate-200 p-3 text-sm">
+      <section className="print-pay-section mt-3 rounded-md border border-slate-200 p-3 text-sm">
         <h2 className="font-semibold">{TEXT.referencePay}</h2>
         {isHourly ? (
-          <div className="mt-2 grid gap-2 md:grid-cols-3">
+          <div className="print-pay-grid mt-2 grid gap-2 md:grid-cols-3">
             <SummaryItem label={TEXT.regularPay} value={formatMoney(regularPay)} />
             <SummaryItem label={TEXT.nightPay} value={formatMoney(nightPay)} />
             <SummaryItem label={TEXT.totalPay} value={formatMoney(totalPay)} />
@@ -552,6 +641,18 @@ function AttendancePrintView({
 
       <section className="mt-4 overflow-hidden rounded-md border border-slate-300">
         <table className="print-table w-full border-collapse text-xs">
+          {/* table-layout: fixed で使う列幅。備考だけ広く取り、残りは内容に合わせた固定幅。 */}
+          <colgroup>
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "6%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "8%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "9%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "32%" }} />
+          </colgroup>
           <thead className="bg-slate-100">
             <tr>
               <TableHeader>{TEXT.date}</TableHeader>
@@ -590,7 +691,7 @@ function AttendancePrintView({
         </table>
       </section>
 
-      <section className="mt-5 grid gap-3 text-sm md:grid-cols-3">
+      <section className="print-sign-grid mt-5 grid gap-3 text-sm md:grid-cols-3">
         <SignatureBox label={TEXT.employeeSign} />
         <SignatureBox label={TEXT.managerSign} />
         <SignatureBox label={TEXT.remarks} />
